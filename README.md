@@ -12,9 +12,11 @@ A short overview of auto layouting options for ArchiMate follows:
 2. [https://github.com/ThomasRohde/archi-scripts] There are some scripts that apply DAGRE layout to views. DAGRE is fine for trees: Organigrams for tree-like capability maps, for example. The things I have on my maps are not a tree at all.
 
 For testing purposes, I used some stuff from the ArchiSurance file and made a exaggeratedly messy map from that:
+![Markdown Logo](view1.jpg)
 
 I asked ChatGPT to make in better, and the output was:
 “generated with the assistance of OpenAI’s GPT-5 model.”
+![Markdown Logo](view1chatgpt.png)
 
 
 

@@ -22,22 +22,11 @@ And frankly I just wouldn't know what an algorithm would like like, that simply 
 But could I describe by what attributes I would recognize a better version of that view? That way, the layouting becomes a multidimensional optimization problem; most likely some kind of strange relative of the NP-hard Traveling Salesman Problem. So whats the solution to NP-hard problems? Yeah, quantum computing! And for the time until I get my quantum computer, a similar mechanism needs to suffice, something thats not just indefinetly guessing and trying out all solutions, but comes up with potentially good candidates on its own. That leads us to Genetic Algorithms, that I got once got taught by the wonderful professor Ernesto Staffetti [https://tsc.urjc.es/~staffetti/] at URJC in 2006. That was a long time ago, but still Genetic Algorithms are a beautiful way of looking at problems by shifting our focus to what actually makes up good solutions.
 
 The magic of the Genetic Algorithms lies in these two essential parts:
-In solution space, consider there may be a large number of randomly generated more or less nice solutions for your problem. How do you combine them in such a way so that the good attributes of both parents get shifted to their ancestor? And second, a fitness function, that serves for eliminating the bad solutions that will lead nowhere.
+In solution space, consider there may be a large number of randomly generated more or less nice solutions for your problem. How do you combine them in such a way so that the good attributes of both parents get transfered to their ancestor? And second, a fitness function, that serves for eliminating the bad solutions that will lead nowhere. After eliminating the bad ideas, we randomly generate new ones; it may be smart to generate them in a specific way, but actually this is the point where random creativity is needed in order to broaden the solution space.
 
-In my algorithm I posted here, I solved none of that problems. And please don't laugh at the 2005-coding-style. And don't get mad at my careless interpretation of Genetic Algorithms and that there is no normalization for any value ranges. This is just a Proof of Concept and it may benefit from ideas in term of fitness and recombination. 
+In my algorithm I posted here, I solved none of that problems. And please don't laugh at the 2005-Javascript-coding-style. And don't get mad at my careless interpretation of Genetic Algorithms and that there is no normalization for any value ranges. This is just a Proof of Concept and it may benefit from ideas in term of fitness and recombination. 
 
+What it does, after 10 minutes calculation time on my 8 years old laptop, that means: 100 generations of 800-1600 solutions, is this:
+![Markdown Logo](view1it2.jpg)
 
-
- /*
- *  This is an jArchi-Script to be executed with GraalJSScriptEngine.
- *
- *  The program intents to organize your currently selected Archi view following some rules.
- *  The rules are evaluated in the fashion of a fitness function of a genetic algorithm.
- *   
- *  An individuum of the population represents a view, that is the location and size of all elements on the view.
- *  
- *  A big confound is the nesting of elements, which is currently not accessible via jArchi scripting.
- *  Further program versions may address the nestings by using the Java API.
- *  
-# jarchi-ga-organizeView
-Optimize Archimate view layout using a genetic algorithm
+Obviously, there is a lot of space for improvement. 

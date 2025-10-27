@@ -39,8 +39,10 @@ Some of the rules for fitness are:
 1. Inspired by Gregor Hohpe's great book "The Software Architect Elevator: Redefining the Architect's Role in the Digital Enterprise", the rule to place those elements in the middle, that have the highest degree of connection. Also make them larger
 2. Have some minimum spacing between items
 3. Keep an aspect ratio better than 1:4
-4. Boxes should overlap, obviously
+4. Boxes should **not** overlap, obviously
 5. If there is a connection between to boxes, there shouldn't be another box just in the middle between them
+
+Looking at that sketch above: "make short paths shorter" could be a rule.
 
 For recombining two solutions, I implemented 3 random modes:
 1. average all box locations and sizes (this probably just moves stuff to the middle, maybe not a good idea)

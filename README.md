@@ -1,6 +1,6 @@
 # Darwin shifting the Boxes
 
-** How a Genetic Algorithm may auto-layout ArchiMate views, written as a jArchi-Script. You need the jArchi-Plugin for Archi in order to execute the script. It has no further dependencies. **
+**How a Genetic Algorithm may auto-layout ArchiMate views, written as a jArchi-Script. You need the jArchi-Plugin for Archi in order to execute the script. It has no further dependencies.**
 
 The typical working day of an IT Enterprise Architect is dedicated to mapping the IT landscape of the organization. Very large organizations employ Enterprise Architects, and the larger the organization, the higher is the need for a comprehensive overview of the system landscape. Data flows need to be shown, who uses which system for which purpose, and how are these systems structured. 
 When an organization newly starts establishing the Enterprise Architecture practice, they quickly discover that commercial tools are quite pricy and that staff needs time and training to use them. Worse, many tools violate the very principle which often was the actual driver for setting up the architecture practice itself: Interoperability. 

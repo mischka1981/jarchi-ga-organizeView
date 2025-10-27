@@ -1,3 +1,5 @@
+== Darwin shifting the Boxes ==
+
 The typical working day of an IT Enterprise Architect is dedicated to mapping the IT landscape of the organization. Very large organizations employ Enterprise Architects, and the larger the organization, the higher is the need for a comprehensive overview of the system landscape. Data flows need to be shown, who uses which system for which purpose, and how are these systems structured. 
 When an organization newly starts establishing the Enterprise Architecture practice, they quickly discover that commercial tools are quite pricy and that staff needs time and training to use them. Worse, many tools violate the very principle which often was the actual driver for setting up the architecture practice itself: Interoperability. 
 We actually found a nice solution for the beginning: ArchiMate is the standard notation for Enterprise Architecture, it comes along with its own metamodel, there is an awesome open source modelling tool, and has a very large community, and best of all: There is a standard file format that permits exchanging models between at least some tools. The downsides should not be kept secret as well: My collegues are in deep disgrace for "my" choice of colorings: ArchiMate comes with semantics for colors and these colors seem to resemble those used by the CGA computer games from the 80s. The plentitude of entity types provided by the ArchiMate metamodel is so overwhelming, that one needs to put very tight restrictions on what to put on the map. Usually, the maps are hardly unterstandable by management or anyone who has never taken a class on ArchiMate.
@@ -29,4 +31,19 @@ In my algorithm I posted here, I solved none of that problems. And please don't 
 What it does, after 10 minutes calculation time on my 8 years old laptop, that means: 100 generations of 800-1600 solutions, is this:
 ![Markdown Logo](view1it2.jpg)
 
-Obviously, there is a lot of space for improvement. 
+Obviously, there is a lot of space for improvement here.
+
+Some of the rules for fitness are:
+1. Inspired by Gregor Hohpe's great book "The Software Architect Elevator: Redefining the Architect's Role in the Digital Enterprise", the rule to place those elements in the middle, that have the highest degree of connection. Also make them larger
+2. Have some minimum spacing between items
+3. Keep an aspect ratio better than 1:4
+4. Boxes should overlap, obviously
+5. If there is a connection between to boxes, there shouldn't be another box just in the middle between them
+
+For recombining two solutions, I implemented 3 random modes:
+1. average all box locations and sizes (this probably just moves stuff to the middle, maybe not a good idea)
+2. decide if take the value from box1 or box2 (decision per attribut, maybe different within an individual)
+3. decide if take the value from box1 or box2 (decision per individual)
+
+For the moment, I'm struggling to come up with more rules; but I am confident they will arise sooner or later.
+Thanks for reading.

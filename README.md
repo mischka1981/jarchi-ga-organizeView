@@ -28,7 +28,7 @@ But could I describe by what attributes I would recognize a better version of th
 The magic of the Genetic Algorithms lies in these two essential parts:
 In solution space, consider there may be a large number of randomly generated more or less nice solutions for your problem. How do you combine them in such a way so that the good attributes of both parents get transfered to their ancestor? And second, a fitness function, that serves for eliminating the bad solutions that will lead nowhere. After eliminating the bad ideas, we randomly generate new ones; it may be smart to generate them in a specific way, but actually this is the point where random creativity is needed in order to broaden the solution space.
 
-In my algorithm I posted here, I solved none of that problems. And please don't laugh at the 2005-Javascript-coding-style. And don't get mad at my careless interpretation of Genetic Algorithms and that there is no normalization for any value ranges. This is just a Proof of Concept and it may benefit from ideas in term of fitness and recombination. 
+In my algorithm I posted here, I solved none of that problems. And please don't laugh at the 2005-Javascript-coding-style. And don't get mad at my careless interpretation of Genetic Algorithms and that there is no normalization for any value ranges. This is just a Proof of Concept and it may benefit from ideas in terms of fitness and recombination. 
 
 What it does, after 10 minutes calculation time on my 8 years old laptop, that means: 100 generations of 800-1600 solutions, is this:
 ![Markdown Logo](view1it2.jpg)

@@ -43,6 +43,7 @@ Some of the rules for fitness are:
 5. If there is a connection between to boxes, there shouldn't be another box just in the middle between them
 
 Looking at that sketch above: "make short paths shorter" could be a rule.
+Also left-to-right or right-to-left with regards to directed relationships may be nice to evaluate.
 
 For recombining two solutions, I implemented 3 random modes:
 1. average all box locations and sizes (this probably just moves stuff to the middle, maybe not a good idea)
@@ -50,4 +51,7 @@ For recombining two solutions, I implemented 3 random modes:
 3. decide if take the value from box1 or box2 (decision per individual)
 
 For the moment, I'm struggling to come up with more rules; but I am confident they will arise sooner or later.
+
+Take into account that the alignment of the boxes is of no value here; aligning them to a grid is a rather trivial task. Finding nicer edges that tilt around the boxes will be nice, but I find this problem even harder: I guess it looks more beautiful, if edges are adjoiningly painted together for the possibly longest path they may take around the boxes; even longer path and more bendpoints may look pleasant, as long as all related edges are grouped visually...
+
 Thanks for reading.

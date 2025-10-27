@@ -6,6 +6,10 @@ So back to my typical working day: As no single person knows it all, and documen
 But in terms of me understanding our IT landscape and keeping an enterprise repository, this layout work is not contributing a lot.
 Thus, an algorithm or any kind of automation is needed in order to save time.
 
+A short overview of auto layouting options for ArchiMate follows:
+
+1. [https://declanbright.com/archimate-graph-explorer/] Declan Bright's ArchiMate Graph Explorer uses a force directed graph, with weights assigned to nodes corresponding to their degree of connections. This wonderful piece of software has two shortcomings: First of all, the output/ordering can not be exported back to Archi. And second, the loaded ArchiMate file cannot exceed 10 megabytes in size because it gets stored in localStorage. Thats very easy to workaround, I just store the xml text of that ArchiMate file in a window.-Variable and now the graph explorers shows my 25 megabyte ArchiMate file. I will share that here; but I guess anybody who may be using it could think it up on their own.
+2. [https://github.com/ThomasRohde/archi-scripts] There are some scripts that apply DAGRE layout to views. DAGRE is fine for trees: Organigrams for tree-like capability maps, for example. The things I have on my maps are not a tree at all.
 
 
 

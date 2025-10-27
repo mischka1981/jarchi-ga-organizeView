@@ -1,0 +1,649 @@
+﻿ /*
+ *  This is an jArchi-Script to be executed with GraalJSScriptEngine.
+ *
+ *  The program intents to organize your currently selected Archi view following some rules.
+ *  The rules are evaluated in the fashion of a fitness function of a genetic algorithm.
+ *   
+ *  An individuum of the population represents a view, that is the location and size of all elements on the view.
+ *  
+ *  A big confound is the nesting of elements, which is currently not accessible via jArchi scripting.
+ *  Further program versions may address the nestings by using the Java API. 
+ */
+
+ var SMALL_DISTANCE_LOWER_CONSTRAINT = 50;
+ 
+function createIndividuumFromView(view) {
+    let individuum = createEmptyIndividuum();
+    let idx = 0;
+    for (let item of $(view).find()) {
+        if (item.concept == null) continue;
+        if (item.concept.type.includes("relationship")) continue;
+
+        let degrees =  0;
+        let connectedTo = [];
+
+        let not_nested_elements = $(view).children("element").filter(e => !e.parent); // nur Elemente ohne Parent
+
+        for (let rel of not_nested_elements) {
+//        for (let rel of $(view).find()) {
+            if (! rel.concept.type.includes("relationship")) continue;
+            if (rel.concept.source.id == item.concept.id || rel.concept.target.id == item.concept.id) degrees++;
+
+            if (rel.concept.source.id == item.concept.id)
+                connectedTo.push(rel.concept.target);
+            else 
+                connectedTo.push(rel.concept.source);
+        }
+
+        individuum.items.push( {
+            "x" : item.bounds.x,
+            "y": item.bounds.y,
+            "width": item.bounds.width,
+            "height": item.bounds.height,
+            "type": item.concept.type,
+            "idx" : idx ++ ,
+            "conceptId": item.concept.id,
+            connections: degrees,
+            connectedTo: connectedTo
+        } );
+    }
+
+    return individuum;
+}
+
+function initialPopulate(population, desiredSize) {
+    for (let i = 1; population.length < desiredSize; i++) 
+        population.push( 
+            getMutatedCopyOfIndividuum(
+                population[0] , 
+                50));
+}
+
+function applyIndividuumToView(view, individuum) {
+    let idx = 0;
+    let not_nested_elements = $(view).children("element").filter(e => !e.parent); // nur Elemente ohne Parent
+
+    for (let item of not_nested_elements) {
+
+//    for (let item of $(view).find()) {
+        if (item.concept == null) continue;
+        if (item.concept.type.includes("relationship")) continue;
+
+        item.bounds = {
+            x: individuum.items[idx].x,
+            y: individuum.items[idx].y,
+            width: individuum.items[idx].width,
+            height: individuum.items[idx].height
+        };
+        idx++;
+    }
+}
+
+function randomInt(min, max) {
+    min = Math.ceil(min);
+    max = Math.floor(max);
+    return Math.floor(Math.random() * (max - min + 1)) + min;
+}
+
+function average(int1, int2) {
+    return (int1 + int2) / 2; 
+}
+
+function generateUUID() { // Public Domain/MIT
+    var d = new Date().getTime();//Timestamp
+    var d2 = ((typeof performance !== 'undefined') && performance.now && (performance.now()*1000)) || 0;//Time in microseconds since page-load or 0 if unsupported
+    return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+        var r = Math.random() * 16;//random number between 0 and 16
+        if(d > 0){//Use timestamp until depleted
+            r = (d + r)%16 | 0;
+            d = Math.floor(d/16);
+        } else {//Use microseconds since page-load if supported
+            r = (d2 + r)%16 | 0;
+            d2 = Math.floor(d2/16);
+        }
+        return (c === 'x' ? r : (r & 0x3 | 0x8)).toString(16);
+    });
+}
+
+function generateId() {
+    return generateUUID();
+}
+
+function createEmptyIndividuum() {
+    return {
+        id: generateId(),
+        fitness: null,
+        items: [],
+        problematicItems: []
+    };
+}
+
+function getRecombinedCopyOfIndividums(individuum1, individuum2) {
+    let individuum = createEmptyIndividuum();
+
+    switch (randomInt(0,2)) {
+        case 0: 
+             // mode 1 : average all
+            for (let idx = 0; idx < individuum1.items.length; idx++) {
+                individuum.items.push( {
+                    x : average( individuum1.items[idx].x, individuum2.items[idx].x),
+                    y:  average( individuum1.items[idx].y, individuum2.items[idx].y),
+                    width:  average( individuum1.items[idx].width, individuum2.items[idx].width),
+                    height : average( individuum1.items[idx].height, individuum2.items[idx].height),
+                    type : individuum1.items[idx].type,
+                    idx : individuum1.items[idx].idx ,
+                    connections: individuum1.items[idx].connections,
+                    conceptId: individuum1.items[idx].conceptId,
+                    connectedTo: individuum1.items[idx].connectedTo
+                } );
+              }
+             break;
+        case 1:
+            // mode 2: half of these, half of those; based on numbers
+            for (let idx = 0; idx < individuum1.items.length; idx++) {
+                individuum.items.push( {
+                    x : selectRandomlyEither( individuum1.items[idx].x, individuum2.items[idx].x),
+                    y:  selectRandomlyEither( individuum1.items[idx].y, individuum2.items[idx].y),
+                    width:  selectRandomlyEither( individuum1.items[idx].width, individuum2.items[idx].width),
+                    height : selectRandomlyEither( individuum1.items[idx].height, individuum2.items[idx].height),
+                    type : individuum1.items[idx].type,
+                    idx : individuum1.items[idx].idx ,
+                    connections: individuum1.items[idx].connections,
+                    conceptId: individuum1.items[idx].conceptId,
+                    connectedTo: individuum1.items[idx].connectedTo
+                } );
+            }
+            break;
+        default:
+            // mode 2: half of these, half of those; based on items
+            for (let idx = 0; idx < individuum1.items.length; idx++) {
+                if (randomInt(0,1) == 0 ) {
+                    individuum.items.push( {
+                        x : individuum1.items[idx].x,
+                        y:   individuum1.items[idx].y,
+                        width:   individuum1.items[idx].width, 
+                        height :  individuum1.items[idx].height, 
+                        type : individuum1.items[idx].type,
+                        idx : individuum1.items[idx].idx ,
+                        connections: individuum1.items[idx].connections,
+                        conceptId: individuum1.items[idx].conceptId,
+                        connectedTo: individuum1.items[idx].connectedTo
+                    } );
+                } else {
+                    individuum.items.push( {
+                        x : individuum2.items[idx].x,
+                        y:   individuum2.items[idx].y,
+                        width:   individuum2.items[idx].width, 
+                        height :  individuum2.items[idx].height, 
+                        type : individuum1.items[idx].type,
+                        idx : individuum1.items[idx].idx ,
+                        connections: individuum1.items[idx].connections,
+                        conceptId: individuum1.items[idx].conceptId,
+                        connectedTo: individuum1.items[idx].connectedTo
+                    } );
+                }
+        }
+    }
+
+    return individuum;
+}
+
+function selectRandomlyEither(int1, int2) {
+    if (randomInt(0,1) == 0 ) 
+        return int1;
+    return int2;
+}
+
+function getMutatedCopyOfIndividuum(individuum, mutationFactor) {
+    let mutated = createEmptyIndividuum();
+
+    if (isNaN(individuum.maxX) ) {
+        calculateFitnessOfIndividuum(individuum);
+    }
+ 
+    let delta = { 
+        x : randomInt(-1*mutationFactor, mutationFactor),
+        y : randomInt(-1*mutationFactor, mutationFactor),        
+        width : randomInt(100, 100+mutationFactor),
+        height : randomInt(40, 40+mutationFactor)
+    };
+    for (let idx = 0; idx < individuum.items.length; idx++) {
+        if (isNaN(individuum.items[idx].x )) console.log("found item with nan x");
+        if (isNaN(delta.x )) console.log("nan delta x");
+        mutated.items.push({
+            x : Math.max(0,  individuum.items[idx].x + delta.x),
+            y:  Math.max(0, individuum.items[idx].y + delta.y),
+            width:  Math.max(100, individuum.items[idx].width + delta.width),
+            height : Math.max(40,  individuum.items[idx].height + delta.height),
+            type :  individuum.items[idx].type,
+            idx : idx ,
+            connections: individuum.items[idx].connections,
+            conceptId:  individuum.items[idx].conceptId,
+            connectedTo: individuum.items[idx].connectedTo
+        });
+
+        if (randomInt(0,2) == randomInt(0,2)) {
+            delta = { 
+                x : randomInt(-1*mutationFactor, mutationFactor),
+                y : randomInt(-1*mutationFactor, mutationFactor),        
+                width : randomInt(100, 100+ mutationFactor),
+                height : randomInt(40, 40+ mutationFactor)
+            };
+        }
+        if (randomInt(0,5) == 1) {
+            delta = { 
+                x : randomInt(0, individuum.maxX),
+                y : randomInt(0, individuum.maxY),        
+                width : randomInt(100,  100+ mutationFactor),
+                height : randomInt(40, 40+ mutationFactor)
+            };
+        }
+    }
+
+    calculateFitnessOfIndividuum(mutated);
+
+    return mutated;
+}
+
+// 100% == all conditions fulfilled  
+// vs. 0% none
+function calculateFitnessOfIndividuum(individuum) {
+ //   console.log(">> calculateFitnessOfIndividuum("+individuum+")");
+    // DONE - no overlapping boxes.
+    // DONE - strongly interconnected items large and in the center; less interconnected items smaller.
+    // DONE - no line crosses thru a box
+    // sufficient spacing between items, but not too much space
+    // possible to draw interconnection with low amount of intersections
+    // nesting: singular used associations depicted as nesting 
+    // DONE: smaller overall picture
+    // Leserichtung Left-to-right
+
+    individuum.fitness = 0;
+    individuum.sizeClasses = []; // 0 smallest , 5 largest
+    individuum.minSize = 100000;    // smallest item
+    individuum.maxSize = 0;         // largest item
+    individuum.center = { x: 0, y: 0 };
+    individuum.maxX = Number.MIN_VALUE; 
+    individuum.maxY = Number.MIN_VALUE;
+    for (let item of individuum.items) {
+        if (item.width < individuum.minSize) individuum.minSize = item.width;
+        if (item.width > individuum.maxSize) individuum.maxSize = item.width;  
+
+        if ((item.x + item.width) > individuum.maxX) individuum.maxX = item.x + item.width;
+        if ((item.y + item.height) > individuum.maxY) individuum.maxY = item.y + item.height;
+    }
+    if (isNaN(individuum.maxX)) throw new Error("isnan: indi.maxx");
+    if (isNaN(individuum.maxY)) throw new Error("isnan: indi.maxY");
+    individuum.center.x = individuum.maxX / 2;
+    individuum.center.y = individuum.maxY / 2;
+    individuum.sizeClasses[0] = individuum.minSize;
+    individuum.sizeClasses[1] = individuum.minSize + (individuum.maxSize - individuum.minSize) / 5;
+    individuum.sizeClasses[2] = individuum.minSize + 2 * (individuum.maxSize - individuum.minSize) / 5;
+    individuum.sizeClasses[3] = individuum.minSize + 3 * (individuum.maxSize - individuum.minSize) / 5;
+    individuum.sizeClasses[4] = individuum.minSize + 4 * (individuum.maxSize - individuum.minSize) / 5;
+    individuum.sizeClasses[5] = individuum.maxSize;
+    
+    // first check interconnection degree with: centrality and size
+   let fitfunc_smallAbstand = (individuum) => {
+        let small_abstand_penalty = 0;
+        for (let item1 of individuum.items) {
+            for (let item2 of individuum.items) {
+                let abstand = rechteckRandAbstand(item1, item2);
+                if (abstand < SMALL_DISTANCE_LOWER_CONSTRAINT) {
+                    small_abstand_penalty += 3;
+                    individuum.problematicItems.push(item1);
+                }
+            }
+        }
+        return small_abstand_penalty;
+   };
+
+   let fitfunc_overlaps = (individuum) => {
+        let overlaps = 0;
+        for (let item1 of individuum.items) {
+            for (let item2 of individuum.items) {
+                const overlap = !(
+                    item1.x + item1.width < item2.x ||      // item1 ist komplett links von item2
+                    item1.x > item2.x + item2.width ||      // item1 ist komplett rechts von item2
+                    item1.y + item1.height < item2.y ||     // item1 ist komplett über item2
+                    item1.y > item2.y + item2.height        // item1 ist komplett unter item2
+                );
+                if (overlap) {
+                    overlaps++;
+                    individuum.problematicItems.push(item1);
+                }
+            }
+        }
+        return overlaps * 10;
+   };
+
+   let fitfunc_obstacles = (individuum) => {
+        // See if a connection line crosses another box.
+        // find the items the items is connected to
+        let obstacle_penalty = 0;
+        for (let item of individuum.items) {
+            let connectedToItems = []; 
+            for (let connectedConcept of item.connectedTo) 
+                for (let pcitem of individuum.items)  
+                    if (pcitem.conceptId == connectedConcept.id) 
+                        connectedToItems.push(pcitem);
+
+            // lines from the item to the connected items
+            for (let connectedItem of connectedToItems) {
+                // now punish if anything else is in the way
+                for (let potential_obstacle of individuum.items)  {
+                    if (potential_obstacle.idx == item.idx || potential_obstacle.idx == connectedItem.idx) 
+                        continue;
+
+                    if (linieSchneidetRechteck(
+                        { 
+                            from : middleOfBounds(connectedItem),
+                            to:    middleOfBounds(item) 
+                        }, 
+                        potential_obstacle)) {
+                            obstacle_penalty += 1;
+                            individuum.problematicItems.push(potential_obstacle);
+
+                        if (obstacle_penalty > 5 ) break;
+                    }
+                }
+            }
+        }
+        obstacle_penalty = obstacle_penalty;
+        return obstacle_penalty;
+   };
+
+   let fitfunc_mapAspectRatio = (individuum) => {
+        if (individuum.maxX / individuum.maxY > 4) return (individuum.maxX / individuum.maxY) * 100;
+        if (individuum.maxY / individuum.maxX > 4) return (individuum.maxY / individuum.maxX) * 100;
+        return 0;
+   }
+
+   let fitfunc_centeredPivots = (individuum) => {
+        let penalty_hightlyConnected_distantFromCenter = 0;
+        for (let item of individuum.items) {
+            if (isNaN(individuum.center.x)) throw new Error("nan individuum.center.x");
+            if (isNaN(individuum.center.y)) throw new Error("nan individuum.center.y");
+            if (isNaN(middleOfBounds(item).x)) throw new Error("nan middleOfBounds(item).x ("+ item.x + ". wid" + item.width +")");
+            if (isNaN(middleOfBounds(item).y)) throw new Error("nan middleOfBounds(item).y");
+            
+            distanceFromCenter = vectorDistance(individuum.center, middleOfBounds(item)); 
+            if (isNaN(distanceFromCenter)) throw new Error("nan distanceFromCenter");
+            if (isNaN(item.connections)) throw new Error("nan item.connections");
+            penalty_hightlyConnected_distantFromCenter += item.connections * distanceFromCenter;
+        }
+           
+        penalty_hightlyConnected_distantFromCenter = penalty_hightlyConnected_distantFromCenter/1000;
+        return penalty_hightlyConnected_distantFromCenter;
+    };
+
+    let fitfunc_largePivots =  (individuum) => {
+        let penalty_hightlyConnected_small = 0;
+        for (let item of individuum.items) {
+            let size = item.width * item.height; // 800 * 400 == very large;  80*40 = min size
+            penalty_hightlyConnected_small += 5000 * ( 1 / size * item.connections);
+        }
+        return penalty_hightlyConnected_small;
+    };
+
+    let fitfunc_megapixels = (individuum) => {
+        let penalty_indi_size_megapixels = ( individuum.maxX *  individuum.maxY ) / 50000; // reward smaller maps
+  //      console.log("indi.size: (" + individuum.maxX + " * " + individuum.maxY + ") = " + penalty_indi_size_megapixels);
+        return penalty_indi_size_megapixels;
+    };
+
+    let fitfuncs = [ fitfunc_mapAspectRatio, fitfunc_largePivots, fitfunc_centeredPivots,
+         fitfunc_megapixels, fitfunc_overlaps , fitfunc_smallAbstand, fitfunc_overlaps  ];
+   // let fitfuncs = [ fitfunc_megapixels, fitfunc_largePivots, fitfunc_smallAbstand, fitfunc_obstacles, fitfunc_centeredPivots ,  fitfunc_overlaps ];
+   
+   let penalty_sum = 0;
+   for (let fitfunc of fitfuncs) {
+        let fitfuncval = fitfunc(individuum);
+        
+        if (isNaN(fitfuncval)) {
+            throw new Error("nan fitness: " + fitfunc);
+        } 
+        penalty_sum += fitfuncval;
+   }
+
+    individuum.fitness = 100.0 - penalty_sum;
+
+    if (isNaN(individuum.fitness)) {
+        throw new Error("nan fitness");
+    }
+
+ //   console.log("fitness: " + individuum.fitness);
+
+    return individuum.fitness;
+}
+
+function punktImRechteck(p, rect) {
+    return (
+      p.x >= rect.x &&
+      p.x <= rect.x + rect.width &&
+      p.y >= rect.y &&
+      p.y <= rect.y + rect.height
+    );
+}
+  
+function linienSegmentSchneidetSegment(p1, p2, q1, q2) {
+    // Hilfsfunktion zur Bestimmung, ob sich zwei Liniensegmente schneiden
+    function ccw(a, b, c) {
+      return (c.y - a.y) * (b.x - a.x) > (b.y - a.y) * (c.x - a.x);
+    }
+    return (
+      ccw(p1, q1, q2) !== ccw(p2, q1, q2) &&
+      ccw(p1, p2, q1) !== ccw(p1, p2, q2)
+    );
+}
+  
+function linieSchneidetRechteck(line, rect) {
+    // 1. Test: Endpunkte liegen im Rechteck?
+    if (
+      punktImRechteck(line.from, rect) ||
+      punktImRechteck(line.to, rect)
+    ) {
+      return true;
+    }
+    // 2. Test: Linie schneidet eine Rechteckkante?
+    const ecken = [
+      { x: rect.x, y: rect.y },
+      { x: rect.x + rect.width, y: rect.y },
+      { x: rect.x + rect.width, y: rect.y + rect.height },
+      { x: rect.x, y: rect.y + rect.height }
+    ];
+    const kanten = [
+      [ecken[0], ecken[1]],
+      [ecken[1], ecken[2]],
+      [ecken[2], ecken[3]],
+      [ecken[3], ecken[0]]
+    ];
+    for (let [a, b] of kanten) {
+      if (linienSegmentSchneidetSegment(line.from, line.to, a, b)) {
+        return true;
+      }
+    }
+    return false;
+}
+
+function rechteckRandAbstand(item1, item2) {
+    // Kanten bestimmen
+    const leftA = item1.x;
+    const rightA = item1.x + item1.width;
+    const topA = item1.y;
+    const bottomA = item1.y + item1.height;
+  
+    const leftB = item2.x;
+    const rightB = item2.x + item2.width;
+    const topB = item2.y;
+    const bottomB = item2.y + item2.height;
+  
+    // Abstand in X-Richtung (0 falls sich überlappen)
+    let dx = 0;
+    if (rightA < leftB) {
+      dx = leftB - rightA;
+    } else if (rightB < leftA) {
+      dx = leftA - rightB;
+    }
+  
+    // Abstand in Y-Richtung (0 falls sich überlappen)
+    let dy = 0;
+    if (bottomA < topB) {
+      dy = topB - bottomA;
+    } else if (bottomB < topA) {
+      dy = topA - bottomB;
+    }
+  
+    // Wenn sich überschneiden, ist mindestens dx oder dy == 0 -> Abstand = 0
+    return Math.sqrt(dx * dx + dy * dy);
+}
+
+function middleOfBounds(bounds) {
+    return {
+        x :  bounds.x + 0.5*(bounds.width),
+        y : bounds.y + 0.5*(bounds.height)
+    };
+}
+
+function vectorDistance(xy1, xy2) {
+    return Math.sqrt(
+        Math.pow(xy2.x - xy1.x, 2) +
+        Math.pow(xy2.y - xy1.y, 2)
+    );
+}
+
+function orderByFitnessAscending(population) {
+    let ordered = [];
+    for (let individuum of population) {
+        ordered.push(individuum);
+        calculateFitnessOfIndividuum(individuum);
+    }
+
+    ordered.sort(function(a, b) {
+        return a.fitness - b.fitness;
+    });
+
+    return ordered;
+}
+
+function ga_selection(population, config, state) {
+    for (let individuum of population) calculateFitnessOfIndividuum(individuum);
+
+    let scores = [];
+    for (let individuum of population) {
+        scores.push(individuum.fitness);
+    }
+    state.min_fit = Number.MAX_VALUE; 
+    for (let i=0; i < scores.length; i++) 
+        if (scores[i]<state.min_fit) 
+            state.min_fit=scores[i];
+    state.max_fit = -100000;  
+    for (let i=0; i < scores.length; i++) 
+        if (scores[i]> state.max_fit)  
+            state.max_fit=scores[i];
+
+    let new_population = population
+        .slice()                       // Kopie, um Original zu bewahren (optional)
+        .sort((a, b) => b.fitness - a.fitness) // absteigend nach "weight" sortieren
+        .slice(0, config.populationSize);    
+    
+    state.averageFitness = calculateAverageFitness(new_population);
+
+    console.log("ga_selection #" + state.iteration +"/"+config.maxIterations
+        + " ["+population.length+"->"+new_population.length+"; each "+state.population[0].items.length
+        +" items] [FIT "+Math.floor(state.min_fit)+" to " + Math.floor(state.max_fit)+ "; avg " 
+        +  Math.floor(state.averageFitness) + "]");
+
+    return new_population ;    
+}
+
+function calculateAverageFitness(pop) {
+    let sum = 0;
+    for (let popi of pop) sum += popi.fitness;
+    return sum / pop.length;
+}
+
+function getBestIndividuum(pop) {
+    let best = pop[0];
+    for (let popi of pop) 
+        if ( popi.fitness >= best.fitness )  
+            best = popi;
+    return best;
+}
+
+function recombine(population, amountOfRecombinations) {
+   // console.log("recombine: " + population.length + " to " + amountOfRecombinations);
+    let initial_length = population.length ;
+    for (let i = 0; i < amountOfRecombinations; i++) {
+        population.push(
+            getRecombinedCopyOfIndividums(
+                population[ randomInt(0, initial_length -1 ) ],
+                population[ randomInt(0, initial_length -1 ) ]));
+    }
+}
+
+function mutate(population, amountOfMutations, config) {
+  //  console.log("mutate: " + population.length + " to " + amountOfMutations);
+    for (let i = 0; i < amountOfMutations; i++) {
+        let victim =  randomInt(0, population.length -1 );        
+        population.push( getMutatedCopyOfIndividuum(population[victim], config.mutationFactor) );
+    }
+}
+
+function check(state, config) {
+    for (let i = 0 ; i < state.population.length; i++) {
+        try {
+            let indi = state.population[i];
+            for (let j = 0; j < indi.items.length; j++) {
+                let item = indi.items[j];
+            }
+            let l =  state.population[i].items.length;
+        } catch (e) {
+            console.log("On indi " + i + "("+state.population[i]+") there are no items.");
+            exit;
+            throw new Error();
+        }
+    }
+}
+
+function algorithm() {
+    console.log("algorithm started: " + $(selection));
+
+    const selectedView = selection.first() || $(selection).filter("view").first() || $(views).current;
+    if (!selectedView) {
+        console.log("⚠️ Bitte zuerst eine View auswählen oder öffnen.");
+        return;
+    }
+
+    let config = {
+        populationSize: 800,
+        maxIterations : 50,
+        mutationFactor: 5000,
+        minimumDesiredFitness: 100 };
+    
+    let state = {
+        iteration : 0,
+        averageFitness : 0,
+        population: []
+    };
+
+    state.population.push(createIndividuumFromView(selectedView));
+    for (let individuum of state.population) calculateFitnessOfIndividuum(individuum);
+
+    initialPopulate( state.population, config.populationSize );
+    for (let individuum of state.population) calculateFitnessOfIndividuum(individuum);
+
+    check(state, config);
+
+    while (state.averageFitness < config.minimumDesiredFitness && state.iteration++ < config.maxIterations) {
+        recombine(state.population, config.populationSize / 2);
+        mutate(state.population, config.populationSize / 2, config);
+        state.population = ga_selection(state.population, config, state);  //  -- by fitness
+        applyIndividuumToView(selectedView, getBestIndividuum(state.population));
+    }
+
+    // am ende alignments
+    // wahrscheinlich muss man subpopulationen erlauben einige fitnesskriterien auszuklammern zumindest für eine zeit.
+}
+
+algorithm();
